@@ -8,7 +8,7 @@ if not steamworks then
     error( "There is no steamworks library, it is required to work with the Steam Workshop, a supported binary for server side: https://github.com/WilliamVenner/gmsv_workshop" )
 end
 
-install( "packages/steam-api", "https://github.com/Pika-Software/steam-api" )
+install( "packages/steam-api.lua", "https://raw.githubusercontent.com/Pika-Software/steam-api/main/lua/packages/steam-api.lua" )
 
 local promise = promise
 local ipairs = ipairs
@@ -16,11 +16,12 @@ local steam = steam
 local table = table
 local file = file
 
-file.CreateDir( "downloads/server" )
-module( "workshop" )
+local lib = {
+    ["Downloads"] = file.CreateDir( "downloads/" .. string.lower( gpm.Realm ) )
+}
 
-GetItem = steam.GetPublishedFileDetails
-GetCollection = promise.Async( function( ... )
+lib.GetItem = steam.GetPublishedFileDetails
+lib.GetCollection = promise.Async( function( ... )
     local ok, result = steam.GetCollectionDetails( ... ):SafeAwait()
     if not ok then return promise.Reject( result ) end
 
@@ -52,7 +53,7 @@ GetCollection = promise.Async( function( ... )
     return result
 end )
 
-function DownloadGMA( ... )
+function lib.DownloadGMA( ... )
     local p = promise.New()
     local tasks = { ... }
 
@@ -67,7 +68,7 @@ function DownloadGMA( ... )
                 local content = fileClass:Read( fileClass:Size() )
                 fileClass:Close()
 
-                filePath = "downloads/server/" .. wsid .. ".gma.dat"
+                filePath = lib.Downloads .. wsid .. ".gma.dat"
                 fileClass = file.Open( filePath, "wb", "DATA" )
                 filePath = "data/" .. filePath
 
@@ -93,7 +94,7 @@ function DownloadGMA( ... )
     return p
 end
 
-function Get( wsid )
+function lib.Get( wsid )
     local p = promise.New()
 
     steamworks.FileInfo( wsid, function( data )
@@ -107,3 +108,5 @@ function Get( wsid )
 
     return p
 end
+
+return lib
